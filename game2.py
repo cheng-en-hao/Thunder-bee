@@ -6,7 +6,7 @@ size = width, height = 600,750  # 设置窗口
 flyv=8
 flyxiao=3
 flyda=20,40
-flyman=2
+flyman=2.5
 bulv=20
 bulv2=3
 flylan=100
@@ -17,8 +17,8 @@ flywudi=100
 class Fly(object):
 
     def __init__(self,id=1):
-        self.sx=20
-        self.sy=40
+        self.sx=30
+        self.sy=30
         self.py=650
         self.px=270
         self.vx=0
@@ -45,12 +45,13 @@ class Fly(object):
     def fire(self):
         if moshi== 0 or moshi==3:
             if self.fire1==1:
+                self.fire1=0
                 if moshi==3 and self.id==2:
                     si=0
                     for i in bul3:
                         si+=1;
                     if si==0:
-                        bul3.append(Bul(self.px+self.sx/2,self.py,0,bulv,1,20))
+                        bul3.append(Bul(self.px+self.sx/2,self.py,0,bulv1,1,20))
                 else:
                     si=0
                     for i in bul:
@@ -82,7 +83,7 @@ class Fly(object):
                 t=random.random()
                 if t<self.val*0.1: self.lan+=1
                 self.san3*=-1
-                bul.append(Bul(self.px + self.sx / 2, self.py+self.sy/2, self.san3, 0,3))
+                bul.append(Bul(self.px + self.sx / 2+self.san3, self.py+self.sy/2, self.san3, 0,3))
                 self.cd3=1
         if self.fire4==1 and self.lan>30:
             self.lan-=30
@@ -110,7 +111,7 @@ class Fly(object):
             else :self.py=max(0,self.py)
             self.py=min(height-self.sy,self.py)
         if self.xiao==1 and self.lan>-111:
-            self.rect = pygame.Rect(self.px, self.py, flyxiao, flyxiao)
+            self.rect = pygame.Rect(self.px+self.sx/2, self.py+self.sy/2, flyxiao, flyxiao)
             self.lan-=0
             self.v=flyman
         else :
@@ -118,7 +119,17 @@ class Fly(object):
             self.xiao=0
             self.v=flyv
         if (self.wudi/2)%2==0 or self.wudi<70 :
-            pygame.draw.rect(screen, (255, 0, 0), self.rect, 5)
+            if self.id==2 :screen.blit(guang2, (self.px, self.py))
+            else :
+                if self.xiao==1:
+                    temp = pygame.Surface((30, 30)).convert()
+                    temp.blit(guang, (0, 0))
+                    temp.set_alpha(100)
+                    screen.blit(temp, (self.px,self.py))
+                    pygame.draw.rect(screen, (255, 0, 0), self.rect, 5)
+                else :
+                    screen.blit(guang, (self.px, self.py))
+
         if self.wudi>0:
             rect1=pygame.Rect(self.px+self.sx+2, self.py, self.sx/3, self.wudi/flywudi*self.sy)
             pygame.draw.rect(screen, (255, 200, 100), rect1, 0)
@@ -203,10 +214,13 @@ class Bul(object):
             self.vy = y / l * self.v
     def update(self):
         self.rect = pygame.Rect(self.px, self.py, self.sx, self.sy)
-        if self.id==4or self.id==7:pygame.draw.rect(screen, (255,255, 255), self.rect, 5)
-        elif self.id == 6:
-            pygame.draw.rect(screen, (255, 255, 0), self.rect, 5)
-        else :pygame.draw.rect(screen, (0,255, 0), self.rect, 5)
+        if moshi!=1:
+            screen.blit(zidan, (self.px, self.py))
+        else :
+            if self.id==4or self.id==7:pygame.draw.rect(screen, (255,255, 255), self.rect, 5)
+            elif self.id == 6:
+                pygame.draw.rect(screen, (255, 255, 0), self.rect, 5)
+            else :pygame.draw.rect(screen, (0,255, 0), self.rect, 5)
 class Enemy1(object):
     def __init__(self,px,py,die,vx=2,vy=1.5,tt=100,id=1):
         self.sx=30
@@ -226,11 +240,37 @@ class Enemy1(object):
         self.font = pygame.font.SysFont("Arial",20)
         self.jiao=0
     def up(self):
-        if self.t%self.tt==0: self.vx*=-1;
+        if moshi==0 and self.vy!=0:
+            x=fly.px+fly.sx-self.px-self.sx
+            y=fly.py-self.py
+            k=1
+            if self.px>width/4*3:self.vx=-2
+            if self.px<width/4:self.vx=2
+            if y<100 and abs(x)<abs(y)+self.sx:
+                if  (x<y+30 or x>y+30):
+                    k=-1
+                self.vx = abs(2) * k
+            if len(bul)>0:
+                x=bul[0].px-(self.px+self.sx)
+                y=bul[0].py-(self.py)
+                if y>0and abs(x)<50:
+                    if x>0:
+                        k = -1
+                    self.vx=abs(2) *k
+
+        else :
+            if self.t%self.tt==0: self.vx*=-1;
         self.py+=max(0,(self.vy));
         self.px+=self.vx;
-        if self.px>width or self.px+self.sx<0 : self.vx*=-1
-        if self.py>height :self.die=0
+        if moshi==0:
+            if self.px+self.sx>width or self.px<0 : self.vx*=-1
+            if self.px+self.sx>width:self.px=width-self.sx
+            if self.px<0: self.px=0
+        else :
+            if self.px > width or self.px+self.sx < 0: self.vx *= -1
+        if self.py>height :
+            if moshi==0:self.py=0
+            else :self.die=0
     def fire(self):
         if self.id==7:
             if time%7==0:
@@ -238,8 +278,8 @@ class Enemy1(object):
                     jiao = self.jiao
                     jiao = (jiao/6 + i * 40) % 360 / 180 * math.pi
                     bul2.append(Bul(self.px + self.shix / 2 ,
-                                    self.py + self.shix / 2 ,math.cos(jiao),
-                                    math.sin(jiao), 4))
+                                    self.py + self.shix / 2 ,math.cos(-jiao),
+                                    math.sin(-jiao), 4))
                     bul2.append(Bul(self.px + self.shix / 2+100*math.cos(jiao),
                                     self.py + self.shix / 2+100*math.sin(jiao), math.cos(jiao+math.pi/5*3),
                                     math.sin(jiao+math.pi/5*3), 4))
@@ -328,8 +368,13 @@ class Enemy1(object):
         self.shix=min(max(self.sx,self.die),50)
         self.shiy = min(max(self. sy,self. die), 50)
         self.rect = pygame.Rect(self.px, self.py, self.shix, self.shiy)
-        pygame.draw.rect(screen, (255,255, 255), self.rect, 0)
-        screen.blit(self.font.render(str(self.die), -1, (0, 0, 0)), (self.px+7, self.py+3))
+        if moshi!=1:
+            screen.blit(m2[int(time2/20)%3], (self.px, self.py))
+        else :
+            if self.die>10:
+                pygame.draw.rect(screen, (255, 255, 255), self.rect, 0)
+                screen.blit(self.font.render(str(self.die), -1, (255, 0, 0)), (self.px+self.sx/5*2, self.py+self.sy/5*2))
+            else : screen.blit(m11, (self.px, self.py))
 class Box(object):
     def __init__(self,px,py,id):
         self.sx=20
@@ -365,6 +410,14 @@ class Box(object):
         self.rect = pygame.Rect(self.px, self.py, self.sx, self.sy)
         if self.id==1:pygame.draw.rect(screen, (255,50, 100), self.rect, 0)
         if self.id==2:pygame.draw.rect(screen, (255,0, 0), self.rect, 0)
+class Boom(object):
+    def __init__(self, px, py):
+        self.px = px
+        self.py = py
+        self.time=0
+    def update(self):
+        self.time+=1
+        screen.blit(bom, (self.px,self.py))
 def checkbul():
     de=[]
     for i in bul:
@@ -434,14 +487,21 @@ def checkemeny():
         for j in db: bul.remove(j);
         db.clear()
     for i in de:
+        boom.append(Boom(i.px,i.py))
         emeny.remove(i);
         fly.score+=1
+        if moshi==0 and len(emeny)>0:
+            k=random.randint(0,len(emeny)-1)
+            kk=emeny[k]
+            emeny.remove(kk)
+            emeny.append(Enemy1(kk.px,kk.py, 1, 2,2));
         t=random.random()
-        if t>0.9 and fly.val<5:
-            box.append(Box(i.px,i.py,1));
-        t = random.random()
-        if t > 0.7+fly.life*0.06:
-            box.append(Box(i.px, i.py, 2));
+        if moshi==1:
+            if t>0.9 and fly.val<5:
+                box.append(Box(i.px,i.py,1));
+            t = random.random()
+            if t > 0.7+fly.life*0.06:
+                box.append(Box(i.px, i.py, 2));
     de.clear()
     if moshi==3:
         for i in emeny:
@@ -481,11 +541,21 @@ def checkbox():
     for i in de:
         box.remove(i);
     de.clear()
+def checkboom():
+    de=[]
+    for i in boom:
+        if i.time==10:
+            de.append(i)
+    for i in de:
+        boom.remove(i)
+    de.clear()
 def createMap():
     screen.fill((0, 0, 0))
+    screen.blit(heise, (0, 0))
     checkbul()
     checkemeny()
     checkbox()
+    checkboom()
     fly.fire()
     fly.update()
     if moshi==3:
@@ -496,23 +566,25 @@ def createMap():
     for i in emeny: i.update()
     for i in box:i.update()
     for i in bul2:i.update()
-
+    for i in boom:i.update()
     si=0
     for i in emeny:si+=1
-    screen.blit(font.render('emeny:'+str(si), -1, (0, 255, 250)), (100, 100))
-    rect = pygame.Rect(80, 50, 100,20)
-    rect2=pygame.Rect(80, 50, fly.lan/flylan*100,20)
-    rect3 = pygame.Rect(80, 20, 100, 20)
-    rect4 = pygame.Rect(80, 20, fly.life / flylife * 100, 20)
-    pygame.draw.rect(screen, (255, 0, 0), rect3, 2)
-    pygame.draw.rect(screen, (255, 0, 0), rect4, 0)
-    pygame.draw.rect(screen, (0, 255, 255),rect, 2)
-    pygame.draw.rect(screen, (0, 255, 255), rect2,0)
-    screen.blit(font.render('power:', -1, (0, 255, 250)), (0, 45))
-    screen.blit(font.render('life:', -1, (255, 0, 0)), (0, 15))
-    screen.blit(font.render('val:' + str(fly.val), -1, (0, 255, 250)), (0, 73))
-    if moshi==0:screen.blit(font.render('score:' + str(fly.score+30), -1, (0, 255, 250)), (0, 100))
-    if moshi==1:screen.blit(font.render('score:' + str(fly.score), -1, (0, 255, 250)), (0, 100))
+    #screen.blit(font.render('emeny:'+str(si), -1, (0, 255, 250)), (100, 100))
+    if moshi!=3:
+        rect = pygame.Rect(80, 50, 100,20)
+        rect2=pygame.Rect(80, 50, fly.lan/flylan*100,20)
+        rect3 = pygame.Rect(80, 20, 100, 20)
+        rect4 = pygame.Rect(80, 20, fly.life / flylife * 100, 20)
+        pygame.draw.rect(screen, (255, 0, 0), rect3, 2)
+        pygame.draw.rect(screen, (255, 0, 0), rect4, 0)
+        if moshi==1:pygame.draw.rect(screen, (0, 255, 255),rect, 2)
+        if moshi==1:pygame.draw.rect(screen, (0, 255, 255), rect2,0)
+        if moshi==1:screen.blit(font.render('power:', -1, (0, 255, 250)), (0, 45))
+        screen.blit(font.render('life:', -1, (255, 0, 0)), (0, 15))
+        if moshi==1:screen.blit(font.render('val:' + str(fly.val), -1, (0, 255, 250)), (0, 73))
+        if moshi==0:screen.blit(font.render('score:' + str(fly.score+30), -1, (0, 255, 250)), (0, 100))
+        if moshi==1:screen.blit(font.render('score:' + str(fly.score), -1, (0, 255, 250)), (0, 100))
+    screen.blit(font.render('time:' + str(int(time2/60)), -1, (0, 255, 250)), (0, 140))
     screen.blit(font.render('time:' + str(int(time2/60)), -1, (0, 255, 250)), (0, 140))
 
     pygame.display.update()  # 更新显示
@@ -589,16 +661,6 @@ def level_1():
                 emeny.append(Enemy1(0, 0, 5, 5,3,1000));
                 emeny.append(Enemy1(width, 0, 5, -5,3,1000));
         if time==sumt+60:init()
-    if time3 == -1:ha.append(6)#5 da
-    elif ha[time3] == 6:
-        for i in range(5):
-            if time == i*300:
-                sumt+=300
-                emeny.append(Enemy1(width / 2, 30, 150, 2, 0, 100));
-        if time%20==0:
-            emeny.append(Enemy1(0, 0, 5, 5, 2, 1000));
-            emeny.append(Enemy1(width, 0, 5, -5, 2, 1000));
-        if time == sumt+300: init()
     if time3==-1:ha.append(7)#50 kuai xie
     elif ha[time3]==7:
         for i in range(5):
@@ -660,12 +722,22 @@ def level_1():
         if time<=0:
             emeny.append(Enemy1(width/2, 200, 600, 0, 0, 100,7));
         if len(emeny)==0: init(2)
+    if time3 == -1:ha.append(6)#5 da
+    elif ha[time3] == 6:
+        for i in range(5):
+            if time == i*300:
+                sumt+=300
+                emeny.append(Enemy1(width / 2, 30, 150, 2, 0, 100));
+        if time%20==0:
+            emeny.append(Enemy1(0, 0, 5, 5, 2, 1000));
+            emeny.append(Enemy1(width, 0, 5, -5, 2, 1000));
+        if time == sumt+300: init()
     print(ha[time3])
     if time3==-1:ha.append(-1)
 if __name__ == '__main__':
     pygame.init()
     pygame.mixer.init()
-
+    boom=[]
     fly=Fly()
     bul=[]
     ha=[]
@@ -682,10 +754,27 @@ if __name__ == '__main__':
     time=0
     ting=1
     moshi=0
+    m11=pygame.transform.smoothscale(pygame.image.load("image/m1.png"), (30, 30))
+    bom = pygame.transform.smoothscale(pygame.image.load("image/boom.png"), (30, 30))
+    m21=pygame.transform.smoothscale(pygame.image.load("image/m2_1.png"), (30, 30))
+    m22=pygame.transform.smoothscale(pygame.image.load("image/m2_2.png"), (30, 30))
+    m23=pygame.transform.smoothscale(pygame.image.load("image/m2_3.png"), (30, 30))
+    m2=[]
+    m2.append(m21)
+    m2.append(m22)
+    m2.append(m23)
+    zidan=pygame.transform.smoothscale(pygame.image.load("image/zidan.png"), (5, 11))
+    guang = pygame.image.load("image/player.png")
+    guang = pygame.transform.smoothscale(guang, (30, 30))
+    guang.set_colorkey((255, 255, 255))
+    guang2=pygame.transform.smoothscale(pygame.image.load("image/player2.png"), (30, 30))
+    xingkong = pygame.image.load("image/xingkong.jpeg")
+    xingkong = pygame.transform.smoothscale(xingkong, (width, height))
+    heise = pygame.image.load("image/heise.jpeg")
+    heise = pygame.transform.smoothscale(heise, (width, height))
+    flytu=pygame.transform.smoothscale(pygame.image.load("image/heise.jpeg"), (width, height))
     while True:
         clock.tick(60)
-        xingkong = pygame.image.load("image/xingkong.jpeg")
-        xingkong = pygame.transform.smoothscale(xingkong, (width, height))
         screen.blit(xingkong, (0, 0))
         img = pygame.image.load("image/xx.png")
         img = pygame.transform.smoothscale(img, (400, 150))
@@ -707,8 +796,7 @@ if __name__ == '__main__':
         rect1 = pygame.Rect(210, 355, 20, 20)
         rect2 = pygame.Rect(210, 425, 20, 20)
         rect3 = pygame.Rect(210, 495, 20, 20)
-        guang = pygame.image.load("image/player.png")
-        guang = pygame.transform.smoothscale(guang, (30, 30))
+
         if moshi==0:screen.blit(guang, (200, 355))
         if moshi==1:screen.blit(guang, (200, 425))
         if moshi==3:screen.blit(guang, (200, 495))
@@ -719,18 +807,18 @@ if __name__ == '__main__':
         screen.blit(font.render(' 对战模式 ', -1, (255, 255, 250)), (240, 490))
         # screen.blit(font.render(' Made by python_4 ', -1, (255, 255, 250)), (350, 600))
         # screen.blit(font.render('en j kai shi you xi', -1, (255, 255, 250)), (100, 380))
-        # si = pygame.image.load("image/四组.png")
-        # si = pygame.transform.smoothscale(si, (200, 50))
-        # screen.blit(si, (320, 550))
+        si = pygame.image.load("image/四组.png")
+        si = pygame.transform.smoothscale(si, (200, 50))
+        screen.blit(si, (320, 550))
         pygame.display.update()  # 更新显示
         if fl==1 : break;
 
     if moshi==3:fly2=Fly(2)
     if moshi==0:
-        emeny.append(Enemy1(300, 0, 20, 20, 0));
+
         for i in range(3):
             for j in range(10):
-                emeny.append(Enemy1(20+j*50, 10+i*35, 1, 1,0));
+                emeny.append(Enemy1(20+j*50, 10+i*35, 1, -1,0));
         fly.score = -30
         while True:
             clock.tick(60)
@@ -784,6 +872,12 @@ if __name__ == '__main__':
                 pygame.display.update()  # 更新显示
                 fly.score=1
                 continue
+            if fly.life == 0:
+                ting *= -1;
+                screen.blit(font.render('press p to be continue', -1, (255, 255, 250)), (200, 300))
+                pygame.display.update()  # 更新显示
+                fly.life = 5
+                continue
             time2 += 1
             time += 1
             if time >= 100 and fly.score >= 0:
@@ -811,7 +905,8 @@ if __name__ == '__main__':
             img = pygame.transform.smoothscale(img, (400, 150))
             screen.blit(img, (100, 120))
             fl = 0
-            screen.blit(font.render('左上角血条 以及 蓝条', -1, (255, 0, 0)), (160, 360))
+            screen.blit(font.render('左上角血条 以及 蓝条', -1, (255, 0, 0)), (160, 320))
+            screen.blit(font.render('空格 判定点缩小，速度变慢', -1, (255, 0, 0)), (160, 360))
             screen.blit(font.render('j 普通子弹', -1, (255, 0, 0)), (160, 400))
             screen.blit(font.render('k 爆裂子弹', -1, (255, 0, 0)), (160, 440))
             screen.blit(font.render('l 跟踪子弹', -1, (255, 0, 0)), (160, 480))
@@ -915,7 +1010,7 @@ if __name__ == '__main__':
             screen.blit(font.render('        f 发射子弹', -1, (255, 250, 0)), (100, 480))
             screen.blit(font.render('player2 <- 左移 ', -1, (255, 250, 0)), (100, 550))
             screen.blit(font.render('        -> 右移', -1, (255, 250, 0)), (100, 590))
-            screen.blit(font.render('        left_ctrl 发射子弹', -1, (255, 250, 0)), (100, 630))
+            screen.blit(font.render('        right_ctrl 发射子弹', -1, (255, 250, 0)), (100, 630))
             # screen.blit(font.render('en j kai shi you xi', -1, (255, 255, 250)), (100, 350))
 
             pygame.display.update()  # 更新显示
@@ -1001,3 +1096,4 @@ if __name__ == '__main__':
         screen.blit(font.render('Game Over', -1, (0, 0, 0)), (300, 300))
         pygame.display.update()  # 更新显示
     pygame.quit()
+
